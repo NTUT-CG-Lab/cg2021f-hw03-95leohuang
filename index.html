@@ -107,7 +107,6 @@
 		const modelFile = ['models/mmd/kizunaai/kizunaai.pmx',
 			'models/mmd/るいのれ式物述有栖_配布用フォルダ/物述有栖.pmx',
 			'models/mmd/『天宮こころ(Kokoro Amamiya)』/『天宮こころ(Kokoro Amamiya)』.pmx',
-			// 'models/mmd/amiya/F.式Amiya_Obsidian ver1.1s.pmx'
 		];
 
 
@@ -158,7 +157,6 @@
 			container.appendChild(renderer.domElement);
 			renderer.autoClear = false;
 			effect = new OutlineEffect(renderer);
-			drawLine();
 			// model
 			helper = new MMDAnimationHelper();
 			read_MMD();
@@ -180,27 +178,34 @@
 		function render() {
 
 			effect.clear();
-			// drawLine() 
+
+			drawLine()
 			camera.position.x = (currentEye % 2 == 0) ? -0.5 : 0.5;
 			setEyePos(currentCamera())
 			effect.setViewport(0, 0, SCREEN_WIDTH / 2, SCREEN_HEIGHT);
 			effect.render(scene, camera);
 
 
+			drawLine();
+			deleteLine(0)
 			setEyePos(0)
 			effect.setViewport(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, SCREEN_WIDTH / 4, SCREEN_HEIGHT / 2);
 			effect.render(scene, camera2);
 
-			// let left = scene.getObjectByName('left')
-			// left.position.y = 1000;
+			drawLine();
+			deleteLine(1)
 			setEyePos(1)
 			effect.setViewport(SCREEN_WIDTH / 2 + SCREEN_WIDTH / 4, SCREEN_HEIGHT / 2, SCREEN_WIDTH / 4, SCREEN_HEIGHT / 2);
 			effect.render(scene, camera3);
 
+			drawLine();
+			deleteLine(2)
 			setEyePos(2)
 			effect.setViewport(SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 4, SCREEN_HEIGHT / 2);
 			effect.render(scene, camera4);
 
+			drawLine();
+			deleteLine(3)
 			setEyePos(3)
 			effect.setViewport(SCREEN_WIDTH / 2 + SCREEN_WIDTH / 4, 0, SCREEN_WIDTH / 4, SCREEN_HEIGHT / 2);
 			effect.render(scene, camera5);
@@ -249,23 +254,7 @@
 		function onDocumentMouseMove(event) {
 			mousePosition.x = (event.pageX / window.innerWidth) * 2 - 1;
 			mousePosition.y = -(event.pageY / window.innerHeight) * 2 + 1;
-			// const { left, top, width, height } = event.currentTarget.getBoundingClientRect();
-			// mousePosition.set(
-			// 	((event.clientX - left + 1) / width) * 2 - 1,
-			// 	-((event.clientY - top + 1) / height) * 2 + 1,
-			// 	(camera.near + camera.far) / (camera.near - camera.far),
-			// );
-			// mousePosition.unproject(camera);
 			$('canvas').mousedown(function (event) {
-				// let points = [];
-				// points.push(new THREE.Vector3(mousePosition.x, mousePosition.y+0.5, 20))
-				// points.push(new THREE.Vector3(mousePosition.x, mousePosition.y-0.5, 20))
-				// console.warn(mousePosition.x, mousePosition.y)
-				// let eyeline = new THREE.Line(
-				// 	new THREE.BufferGeometry().setFromPoints(points),
-				// 	new THREE.LineBasicMaterial({ color: 0x3fff00 })
-				// )
-				// scene.add(eyeline);
 				switch (event.which) {
 					case 1:
 						mousePressed = true;
@@ -410,6 +399,7 @@
 			}
 
 
+			drawLine();
 			loader.load(modelFile[currentModel], function (object) {
 				mesh = object;
 				mesh.position.y = - 10;
@@ -434,52 +424,83 @@
 			}
 
 		}
+		let rightEyelines = [];
+		let leftEyelines = [];
+		let verticalLine = [
+			{ x: 0.75, interval: 0.0625, y0: 7.75, y1: 8.75 },
+			{ x: 0.31, interval: -0.05875, y0: 4.2, y1: 5.2 },
+			{ x: 0.75, interval: 0.05625, y0: 6, y1: 5 },
+		]
+
+		let horizontalLine = [
+			{ x0: 0, x1: 1, y: 8.4, interval: 0.1 },
+			{ x0: 0, x1: 1, y: 4.73, interval: 0.1 },
+			{ x0: 0, x1: 1, y: 5.6, interval: 0.065 },
+		]
 		function drawLine() {
-
-			
+			if (currentEye % 2 == 0)
+				drawRightLine();
+			else
+				drawLeftLine()
+		}
+		function deleteLine(c) {
+			if (c != currentCamera()) {
+				for (let i = 0; i < rightEyelines.length; i++)
+					scene.remove(rightEyelines[i])
+				for (let i = 0; i < leftEyelines.length; i++)
+					scene.remove(leftEyelines[i])
+			}
+		}
+		function drawRightLine() {
 			for (let i = 0; i < 9; i++) {
 				let points = [];
-				points.push(new THREE.Vector3(-0.75 + i * 0.0625, 8.75, 20))
-				points.push(new THREE.Vector3(-0.75 + i * 0.0625, 7.75, 20))
+				points.push(new THREE.Vector3(-verticalLine[currentModel].x + i * verticalLine[currentModel].interval, verticalLine[currentModel].y0, 20))
+				points.push(new THREE.Vector3(-verticalLine[currentModel].x + i * verticalLine[currentModel].interval, verticalLine[currentModel].y1, 20))
 				let eyeline = new THREE.Line(
 					new THREE.BufferGeometry().setFromPoints(points),
 					new THREE.LineBasicMaterial({ color: 0xff0000 })
 				)
+				rightEyelines.push(eyeline)
 				scene.add(eyeline);
 			}
-			
+			for (let i = 0; i < 5; i++) {
+				let points = [];
+				points.push(new THREE.Vector3(horizontalLine[currentModel].x0, horizontalLine[currentModel].y + i * -horizontalLine[currentModel].interval, 20))
+				points.push(new THREE.Vector3(-horizontalLine[currentModel].x1, horizontalLine[currentModel].y + i * -horizontalLine[currentModel].interval, 20))
+				let eyeline = new THREE.Line(
+					new THREE.BufferGeometry().setFromPoints(points),
+					new THREE.LineBasicMaterial({ color: 0x3fff00 })
+				)
+				rightEyelines.push(eyeline)
+				scene.add(eyeline);
+			}
+		}
+
+		function drawLeftLine(params) {
 			for (let i = 0; i < 9; i++) {
 				let points = [];
-				points.push(new THREE.Vector3(0.75 + i * -0.0625, 8.75, 20))
-				points.push(new THREE.Vector3(0.75 + i * -0.0625, 7.75, 20))
+				points.push(new THREE.Vector3(verticalLine[currentModel].x + i * -verticalLine[currentModel].interval, verticalLine[currentModel].y0, 20))
+				points.push(new THREE.Vector3(verticalLine[currentModel].x + i * -verticalLine[currentModel].interval, verticalLine[currentModel].y1, 20))
 				let eyeline = new THREE.Line(
 					new THREE.BufferGeometry().setFromPoints(points),
 					new THREE.LineBasicMaterial({ color: 0xff0000 })
 				)
+				leftEyelines.push(eyeline)
 				scene.add(eyeline);
 			}
 
 			for (let i = 0; i < 5; i++) {
 				let points = [];
-				points.push(new THREE.Vector3(0, 8.4 + i * -0.1, 20))
-				points.push(new THREE.Vector3(1, 8.4 + i * -0.1, 20))
+				points.push(new THREE.Vector3(horizontalLine[currentModel].x0, horizontalLine[currentModel].y + i * -horizontalLine[currentModel].interval, 20))
+				points.push(new THREE.Vector3(horizontalLine[currentModel].x1, horizontalLine[currentModel].y + i * -horizontalLine[currentModel].interval, 20))
 				let eyeline = new THREE.Line(
 					new THREE.BufferGeometry().setFromPoints(points),
 					new THREE.LineBasicMaterial({ color: 0x3fff00 })
 				)
-				eyeline.name = "left"
+				leftEyelines.push(eyeline)
 				scene.add(eyeline);
 			}
-			for (let i = 0; i < 5; i++) {
-				let points = [];
-				points.push(new THREE.Vector3(0, 8.4 + i * -0.1, 20))
-				points.push(new THREE.Vector3(-1, 8.4 + i * -0.1, 20))
-				let eyeline = new THREE.Line(
-					new THREE.BufferGeometry().setFromPoints(points),
-					new THREE.LineBasicMaterial({ color: 0x3fff00 })
-				)
-				scene.add(eyeline);
-			}
+
 		}
 
 
